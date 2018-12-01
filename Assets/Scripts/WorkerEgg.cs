@@ -3,29 +3,19 @@ using System.Collections.Generic;
 using UnityEngine;
 
 public class WorkerEgg : IInteractableObject {
+    [Header("Configuration")]
+    public float SpeedMultiplier = 1.0f;
 
-	public Workstation Destination;
-    public MaterialSource Source;
+    [Header("UI Elements")]
     public LongtouchIndicator Longtouch;
     public SpriteRenderer SelectedIndicator;
 
-    public enum WorkerEggState : int
-    {
-        Unassigned = 0,
-        Assigning = 1,
-        Waiting = 2,
-        HarvestingPantry = 3,
-        RetrievingPantry = 4,
-        ProcessingPantry = 5,
-        HarvestingEgg = 7,
-        RetrievingEgg = 8,
-        ProcessingEgg = 9,
-        Targeted = 10
-    }
-
-    public float Speed = 1.0f;
+    [Header("In-Game Data")]
+	public Workstation Destination;
+    public MaterialSource Source;
     public Vector3 WalkTarget;
     public WorkerEggState CurrentState = WorkerEggState.Unassigned;
+    public WorkerEgg Victim;
 
     void Start()
     {
@@ -38,6 +28,20 @@ public class WorkerEgg : IInteractableObject {
         {
             WalkTowardTarget();
         }
+    }
+    
+    #region State Tracking
+    public enum WorkerEggState : int
+    {
+        Unassigned = 0,
+        Assigning = 1,
+        Waiting = 2,
+        HarvestingPantry = 3,
+        RetrievingPantry = 4,
+        ProcessingPantry = 5,
+        HarvestingEgg = 7,
+        RetrievingEgg = 8,
+        ProcessingEgg = 9,
     }
 
     void ResetState()
@@ -56,6 +60,24 @@ public class WorkerEgg : IInteractableObject {
         CurrentState = state;
     }
 
+    bool CanAssignToWorkstation()
+    {
+        return CurrentState == WorkerEggState.Unassigned;
+    }
+
+    public bool CanAssignToResource()
+    {
+        // We can have a worker change the resource they're harvesting mid-task
+        // (but the current chunk of work will be lost)
+        return CurrentState == WorkerEggState.Waiting ||
+            CurrentState == WorkerEggState.HarvestingPantry ||
+            CurrentState == WorkerEggState.HarvestingEgg ||
+            CurrentState == WorkerEggState.ProcessingPantry ||
+            CurrentState == WorkerEggState.RetrievingPantry;
+    }
+    #endregion
+
+    #region Movement States
     void WalkTowardTarget()
     {
         if (selectingForHarvest)
@@ -68,12 +90,19 @@ public class WorkerEgg : IInteractableObject {
             CurrentState == WorkerEggState.RetrievingPantry ||
             CurrentState == WorkerEggState.RetrievingEgg)
         {
+            // Follow a victim if we're harvesting another egg
+            if (Victim != null)
+                WalkTarget = Victim.transform.position;
+
             var leftToMove = WalkTarget - transform.position;
-            var frameMovement = Vector3.Normalize(leftToMove) * Speed * Time.deltaTime;
+            var frameMovement = Vector3.Normalize(leftToMove) * SpeedMultiplier * GameEngine.Current.EggSpeed * Time.deltaTime;
             var actualMovement = (frameMovement.magnitude < leftToMove.magnitude) ? frameMovement : leftToMove;
             transform.Translate(actualMovement);
         }
     }
+    #endregion
+    
+    #region Events
 
     public void SelectWorker()
     {
@@ -102,6 +131,16 @@ public class WorkerEgg : IInteractableObject {
     {
         selectingForHarvest = false;
     }
+
+    public override void WorkerInteraction(WorkerEgg worker)
+    {
+        if (worker == Victim)
+        {
+            Victim.Killed();
+            EndEggHarvest();
+        }
+    }
+    #endregion
 
     #region Egg Harvesting
     bool selectingForHarvest = false;
@@ -149,13 +188,10 @@ public class WorkerEgg : IInteractableObject {
         selectingForHarvest = false;
     }
 
-    public WorkerEgg Victim;
-
     public void BeginEggHarvest(WorkerEgg egg)
     {
         ChangeState(WorkerEggState.HarvestingEgg);
         Victim = egg;
-        egg.ChangeState(WorkerEggState.Targeted);
         WalkTarget = egg.transform.position;
     }
 
@@ -176,15 +212,8 @@ public class WorkerEgg : IInteractableObject {
     }
     #endregion
 
-    public override void WorkerInteraction(WorkerEgg worker)
-    {
-        if (worker == Victim)
-        {
-            Victim.Killed();
-            EndEggHarvest();
-        }
-    }
 
+    #region Player Input
     public void AssignWorker(Workstation workstation)
     {
         // If we're in a state where we can assign to a workstation, go from Unassigned to Assigning
@@ -197,6 +226,20 @@ public class WorkerEgg : IInteractableObject {
         }
     }
 
+    public void AssignResource(MaterialSource mats)
+    {
+        // If we assign to a new resource, go from any state to Harvesting
+        if (CanAssignToResource() && mats != Source)
+        {
+            Debug.Log(string.Format("Worker {0} assigned to resource {1}", gameObject.name, mats.gameObject.name));
+            if (Victim != null) Victim = null;
+            Source = mats;
+            DoPantryHarvest();
+        }
+    }
+    #endregion
+
+    #region Automatic Actions
     public void TouchedWorkstation()
     {
         // If we finished an assignment, go from Assigning to Waiting
@@ -211,34 +254,6 @@ public class WorkerEgg : IInteractableObject {
         {
             Debug.Log(string.Format("Worker {0} completed assignment", gameObject.name));
             StartCoroutine(DoProcessing());
-        }
-    }
-
-    bool CanAssignToWorkstation()
-    {
-        return CurrentState == WorkerEggState.Unassigned;
-    }
-
-    public bool CanAssignToResource()
-    {
-        // We can have a worker change the resource they're harvesting mid-task
-        // (but the current chunk of work will be lost)
-        return CurrentState == WorkerEggState.Waiting ||
-            CurrentState == WorkerEggState.HarvestingPantry ||
-            CurrentState == WorkerEggState.HarvestingEgg ||
-            CurrentState == WorkerEggState.ProcessingPantry ||
-            CurrentState == WorkerEggState.RetrievingPantry;
-    }
-
-    public void AssignResource(MaterialSource mats)
-    {
-        // If we assign to a new resource, go from any state to Harvesting
-        if (CanAssignToResource() && mats != Source)
-        {
-            Debug.Log(string.Format("Worker {0} assigned to resource {1}", gameObject.name, mats.gameObject.name));
-            if (Victim != null) Victim = null;
-            Source = mats;
-            DoPantryHarvest();
         }
     }
 
@@ -304,4 +319,5 @@ public class WorkerEgg : IInteractableObject {
                 DoPantryHarvest();
         }
     }
+    #endregion
 }

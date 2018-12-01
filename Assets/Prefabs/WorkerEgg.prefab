@@ -302,11 +302,11 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: a98806355da6b7243a8e5b09b60e6b26, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
-  Destination: {fileID: 0}
-  Source: {fileID: 0}
+  SpeedMultiplier: 1
   Longtouch: {fileID: 114695935760076784}
   SelectedIndicator: {fileID: 212590290703429230}
-  Speed: 2
+  Destination: {fileID: 0}
+  Source: {fileID: 0}
   WalkTarget: {x: 0, y: 0, z: 0}
   CurrentState: 0
   Victim: {fileID: 0}
