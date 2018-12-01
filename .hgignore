@@ -1,0 +1,10 @@
+# use glob syntax.
+syntax: glob
+
+Library/*
+obj
+Temp/*
+*.csproj
+*.sln
+*.suo
+.vscode/*
