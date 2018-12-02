@@ -44,7 +44,7 @@ public class WorkerEgg : IInteractableObject {
         ProcessingEgg = 9,
     }
 
-    void ResetState()
+    public override void ResetState()
     {
         Source = null;
         Destination = null;
@@ -53,6 +53,11 @@ public class WorkerEgg : IInteractableObject {
         selectingForHarvest = false;
         Longtouch.gameObject.SetActive(false);
         DeselectWorker();
+    }
+
+    public override void ClearState()
+    {
+        ResetState();
     }
 
     void ChangeState(WorkerEggState state)
@@ -198,17 +203,16 @@ public class WorkerEgg : IInteractableObject {
     public void EndEggHarvest()
     {
         ChangeState(WorkerEggState.RetrievingEgg);
-        WalkTarget = Destination.transform.position;
+        WalkTarget = Destination.GetWalkPoint();
         Victim = null;
     }
 
     public void Killed()
     {
-        // TODO: Replace with object pooling
         if (Destination != null)
             Destination.AssignedWorker = null;
 
-        Destroy(gameObject);
+        this.Despawn();        
     }
     #endregion
 
@@ -220,7 +224,7 @@ public class WorkerEgg : IInteractableObject {
         if (CanAssignToWorkstation())
         {
             Debug.Log(string.Format("Assigning worker {0} to station {1}", gameObject.name, workstation.gameObject.name));
-            WalkTarget = workstation.transform.position;
+            WalkTarget = workstation.GetWalkPoint();
             ChangeState(WorkerEggState.Assigning);
             Destination = workstation;
         }
@@ -259,7 +263,7 @@ public class WorkerEgg : IInteractableObject {
 
     void DoPantryHarvest()
     {
-        WalkTarget = Source.transform.position;
+        WalkTarget = Source.GetWalkPoint();
         ChangeState(WorkerEggState.HarvestingPantry);
     }
 
@@ -272,7 +276,7 @@ public class WorkerEgg : IInteractableObject {
             ChangeState((CurrentState == WorkerEggState.HarvestingPantry) ?
                 WorkerEggState.RetrievingPantry : 
                 WorkerEggState.RetrievingEgg);
-            WalkTarget = Destination.transform.position;
+            WalkTarget = Destination.GetWalkPoint();
         }
     }
 
@@ -304,20 +308,29 @@ public class WorkerEgg : IInteractableObject {
         // Go from Processing to Harvest, and walk back to the pantry
         if (CurrentState == WorkerEggState.ProcessingPantry)
         {
-            // TODO: Animate number flying to the total
-            GameEngine.Current.UpdateResource(Source.Resource, Source.ProcessingAmount);
+            SpawnResourceParticle(Source.Resource, Source.ProcessingAmount);
             DoPantryHarvest();
         }
         else if (CurrentState == WorkerEggState.ProcessingEgg)
         {
-            // TODO: Add resource
-            GameEngine.Current.UpdateResource(GameEngine.ResourceType.Egg, GameEngine.Current.ProcessedEggQuantity);
+            SpawnResourceParticle(GameEngine.ResourceType.Egg, GameEngine.Current.ProcessedEggQuantity);
             ChangeState(WorkerEggState.Waiting);
 
             // Go back to what we were doing
             if (Source != null)
                 DoPantryHarvest();
         }
+    }
+
+    void SpawnResourceParticle(GameEngine.ResourceType resource, int quantity)
+    {
+        ObjectPooler.Current.Spawn<ResourceGainParticle>("ResourceGainParticle", x => {
+            x.Source = this.transform.position;
+            x.Destination = GameEngine.Current.ResourceDisplays[(int)resource].GetWorldPosition();
+            x.Resource = resource;
+            x.Quantity = quantity;
+            x.SetSprite();
+        });
     }
     #endregion
 }

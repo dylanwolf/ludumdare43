@@ -5,6 +5,7 @@ using UnityEngine;
 public class EggSpawner : MonoBehaviour {
 
 	public float SpawnTime = 10f;
+	public float SpawnOffset = 5f;
 	public WorkerEgg Prefab;
 	public WorkerEgg LastSpawned = null;
 
@@ -17,13 +18,13 @@ public class EggSpawner : MonoBehaviour {
 
 	public void ResetState()
 	{
-		Timer = SpawnTime;
+		Timer = SpawnTime + SpawnOffset;
 		LastSpawned = null;
 	}
 
 	bool CanSpawn()
 	{
-		return LastSpawned == null || LastSpawned.CurrentState != WorkerEgg.WorkerEggState.Unassigned;
+		return LastSpawned == null || !LastSpawned.isActiveAndEnabled || LastSpawned.CurrentState != WorkerEgg.WorkerEggState.Unassigned;
 	}
 
 	void Update()
@@ -35,8 +36,9 @@ public class EggSpawner : MonoBehaviour {
 		if (Timer < 0)
 		{
 			Timer = (SpawnTime + Timer);
-			// TODO: Refactor with object pooling
-			LastSpawned = Instantiate(Prefab, transform.position, transform.localRotation);
+			LastSpawned = ObjectPooler.Current.Spawn<WorkerEgg>("WorkerEgg", x => {
+				x.transform.position = transform.position;
+			});
 		}
 	}	
 }

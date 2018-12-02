@@ -20,4 +20,18 @@ public class Workstation : IInteractableObject {
         if (worker.Destination == this)
 			worker.TouchedWorkstation();
     }
+
+	Transform _workerTargetTransform;
+	BoxCollider2D _workerTargetCollider;
+
+	void Start()
+	{
+		_workerTargetTransform = transform.Find("WorkerInteraction").transform;
+		_workerTargetCollider = _workerTargetTransform.GetComponent<BoxCollider2D>();
+	}
+
+	public Vector3 GetWalkPoint()
+	{
+		return _workerTargetTransform.position + (Vector3)_workerTargetCollider.offset;
+	}
 }
