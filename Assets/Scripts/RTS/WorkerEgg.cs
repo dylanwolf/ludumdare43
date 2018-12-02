@@ -119,15 +119,16 @@ public class WorkerEgg : IInteractableObject {
         SelectedIndicator.enabled = false;
     }
 
-    public override void Touched()
+    public override bool Touched()
     {
         if (GameEngine.Current.PotentiallyHarvestingEgg(this))
         {
              StartCoroutine(ProcessLongtouch());
+             return true;
         }
         else
         {
-             GameEngine.Current.SelectWorker(this);
+             return GameEngine.Current.SelectWorker(this);
         }
         
     }
@@ -218,7 +219,7 @@ public class WorkerEgg : IInteractableObject {
 
 
     #region Player Input
-    public void AssignWorker(Workstation workstation)
+    public bool AssignWorker(Workstation workstation)
     {
         // If we're in a state where we can assign to a workstation, go from Unassigned to Assigning
         if (CanAssignToWorkstation())
@@ -227,10 +228,13 @@ public class WorkerEgg : IInteractableObject {
             WalkTarget = workstation.GetWalkPoint();
             ChangeState(WorkerEggState.Assigning);
             Destination = workstation;
+            return true;
         }
+
+        return false;
     }
 
-    public void AssignResource(MaterialSource mats)
+    public bool AssignResource(MaterialSource mats)
     {
         // If we assign to a new resource, go from any state to Harvesting
         if (CanAssignToResource() && mats != Source)
@@ -239,7 +243,10 @@ public class WorkerEgg : IInteractableObject {
             if (Victim != null) Victim = null;
             Source = mats;
             DoPantryHarvest();
+            return true;
         }
+
+        return false;
     }
     #endregion
 
@@ -328,6 +335,7 @@ public class WorkerEgg : IInteractableObject {
             x.Source = this.transform.position;
             x.Destination = GameEngine.Current.ResourceDisplays[(int)resource].GetWorldPosition();
             x.Resource = resource;
+            x.PercentTraveled = 0;
             x.Quantity = quantity;
             x.SetSprite();
         });

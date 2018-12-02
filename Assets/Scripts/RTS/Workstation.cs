@@ -6,12 +6,13 @@ public class Workstation : IInteractableObject {
 
 	public WorkerEgg AssignedWorker;
 
-	public override void Touched()
+	public override bool Touched()
 	{
 		// If no worker assigned, assign a worker
 		// (Worker and GameEngine will determine eligibility)
 		if (AssignedWorker == null)
-			GameEngine.Current.SendSelectedWorkerTo(this);
+			return GameEngine.Current.SendSelectedWorkerTo(this);
+		return false;
 	}
 
     public override void WorkerInteraction(WorkerEgg worker)

@@ -8,11 +8,11 @@ public class MaterialSource : IInteractableObject {
     public int ProcessingAmount = 4;
     public GameEngine.ResourceType Resource;
 
-	public override void Touched()
+	public override bool Touched()
 	{
         // Try assinging the selected worker to the resource
         // (Worker and GameEngine will determine eligibility)
-		GameEngine.Current.SendSelectedWorkerTo(this);
+		return GameEngine.Current.SendSelectedWorkerTo(this);
 	}
 
     public override void WorkerInteraction(WorkerEgg worker)

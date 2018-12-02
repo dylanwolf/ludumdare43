@@ -22,7 +22,9 @@ public class Griddle : MonoBehaviour {
 		if (IsCooking() && GameEngine.Current.IsPlaying())
 		{
 			timer -= Time.deltaTime;
-			CookGauge.fillAmount = Mathf.Clamp(timer / CookTime, 0, 1);
+			CookGauge.fillAmount = Mathf.Clamp(1 - (timer / CookTime), 0, 1);
+			if (timer <= 0)
+				EndCooking();
 		}
 	}
 
@@ -56,14 +58,27 @@ public class Griddle : MonoBehaviour {
 	{
 		Ingredients.Clear();
 		HasIngredients = false;
-		timer = 0;
-		CookGauge.fillAmount = 0;
+		EndCooking();
 		UpdateGriddleUI();
 	}
 
 	void UpdateGriddleUI()
 	{
 		// TODO: Add animations
+	}
+
+	void StartCooking()
+	{
+		HasIngredients = true;
+		timer = CookTime;
+		CookGauge.enabled = true;
+	}
+
+	void EndCooking()
+	{
+		timer = 0;
+		CookGauge.fillAmount = 0;
+		CookGauge.enabled = false;	
 	}
 
 	public void AddResource(GameEngine.ResourceType resource, int amount)
@@ -73,10 +88,7 @@ public class Griddle : MonoBehaviour {
 
 		Ingredients[resource] += amount;
 		if (amount > 0)
-		{
-			HasIngredients = true;
-			timer = CookTime;
-		}
+			StartCooking();
 
 		UpdateGriddleUI();
 	}
