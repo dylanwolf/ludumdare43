@@ -38,6 +38,7 @@ public class EggSpawner : MonoBehaviour {
 			Timer = (SpawnTime + Timer);
 			LastSpawned = ObjectPooler.Current.Spawn<WorkerEgg>("WorkerEgg", x => {
 				x.transform.position = transform.position;
+				x.UpdateUI();
 			});
 		}
 	}	

@@ -40,7 +40,7 @@ public class OrderDisplay : IPoolable {
 		if (GameEngine.Current.IsPlaying())
 		{
 			timer -= Time.deltaTime;
-			TimerIcon.fillAmount = Mathf.Clamp(1 - (timer / CurrentOrder.Timer), 0, 1);
+			TimerIcon.fillAmount = Mathf.Clamp((timer / CurrentOrder.Timer), 0, 1);
 			if (timer <= 0)
 				Fail();
 		}

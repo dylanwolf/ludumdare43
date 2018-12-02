@@ -12,7 +12,7 @@ public class WorkerEgg : IInteractableObject {
 
     [Header("UI Elements")]
     public LongtouchIndicator Longtouch;
-    public SpriteRenderer SelectedIndicator;
+    public SpriteRenderer[] SelectedIndicators;
     public SpriteRenderer CarryImage;
     public SpriteRenderer EyesImage;
     public Animator FeetAnimator;
@@ -127,12 +127,14 @@ public class WorkerEgg : IInteractableObject {
 
     public void SelectWorker()
     {
-        SelectedIndicator.enabled = true;
+        for (int i = 0; i < SelectedIndicators.Length; i++)
+            SelectedIndicators[i].enabled = true;
     }
 
     public void DeselectWorker()
     {
-        SelectedIndicator.enabled = false;
+        for (int i = 0; i < SelectedIndicators.Length; i++)
+            SelectedIndicators[i].enabled = false;
     }
 
     public override bool Touched()
@@ -229,7 +231,7 @@ public class WorkerEgg : IInteractableObject {
         if (Destination != null)
             Destination.AssignedWorker = null;
 
-        this.Despawn();        
+        this.Despawn();
     }
     #endregion
 
@@ -370,17 +372,17 @@ public class WorkerEgg : IInteractableObject {
 
     bool IsFlippedX(Vector3 movement)
     {
-        return Mathf.Abs(movement.x) >= Mathf.Abs(movement.y) && movement.x > 0;
+        return GetAnimationX(movement) > 0;
     }
 
     bool IsFacingForward(Vector3 movement)
     {
-        return Mathf.Abs(movement.y) > Mathf.Abs(movement.x) && movement.y < 0;
+        return GetAnimationY(movement) < 0;
     }
 
     bool IsFacingBackward(Vector3 movement)
     {
-        return Mathf.Abs(movement.y) > Mathf.Abs(movement.x) && movement.y < 0;
+        return GetAnimationY(movement) > 0;
     }
 
     const string ANIM_IS_WAITING = "IsWaiting";
@@ -389,7 +391,7 @@ public class WorkerEgg : IInteractableObject {
     const string ANIM_X_DIRECTION = "XDirection";
     const string ANIM_Y_DIRECTION = "YDirection";
 
-    void UpdateUI()
+    public void UpdateUI()
     {
         var movement = IsWalking() ?(WalkTarget - this.transform.position) : Vector3.zero;
 
