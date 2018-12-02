@@ -5,8 +5,10 @@ using UnityEngine;
 public class SpriteSorter : MonoBehaviour {
 
 	SpriteRenderer _renderer;
-	public float YMultiplier = 100f;
+	public int YMultiplier = 1000;
+	public int ChildIncrement = 1;
 	float LastY = float.MinValue;
+	public SpriteRenderer[] Children;
 	
 	void Awake()
 	{
@@ -16,7 +18,16 @@ public class SpriteSorter : MonoBehaviour {
 	void Update () {
 		if (!Mathf.Approximately(LastY, transform.position.y))
 		{
-			_renderer.sortingOrder = -Mathf.CeilToInt(transform.position.y * YMultiplier);
+			int value = -Mathf.CeilToInt(transform.position.y * YMultiplier);
+			_renderer.sortingOrder = value;
+			if (Children != null)
+			{
+				for (int i = 0; i < Children.Length; i++)
+				{
+					value += ChildIncrement;
+					Children[i].sortingOrder = value;
+				}
+			}
 			LastY = transform.position.y;
 		}
 	}

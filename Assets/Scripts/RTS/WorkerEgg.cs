@@ -5,10 +5,18 @@ using UnityEngine;
 public class WorkerEgg : IInteractableObject {
     [Header("Configuration")]
     public float SpeedMultiplier = 1.0f;
+    public Sprite DeadEggSprite;
+    public Sprite EyesSideSprite;
+    public Sprite EyesForwardSprite;
+    
 
     [Header("UI Elements")]
     public LongtouchIndicator Longtouch;
     public SpriteRenderer SelectedIndicator;
+    public SpriteRenderer CarryImage;
+    public SpriteRenderer EyesImage;
+    public Animator FeetAnimator;
+    public Animator ArmAnimator;
 
     [Header("In-Game Data")]
 	public Workstation Destination;
@@ -53,6 +61,7 @@ public class WorkerEgg : IInteractableObject {
         selectingForHarvest = false;
         Longtouch.gameObject.SetActive(false);
         DeselectWorker();
+        UpdateUI();
     }
 
     public override void ClearState()
@@ -63,6 +72,7 @@ public class WorkerEgg : IInteractableObject {
     void ChangeState(WorkerEggState state)
     {
         CurrentState = state;
+        UpdateUI();
     }
 
     bool CanAssignToWorkstation()
@@ -83,17 +93,22 @@ public class WorkerEgg : IInteractableObject {
     #endregion
 
     #region Movement States
+    bool IsWalking()
+    {
+        return CurrentState == WorkerEggState.Assigning ||
+            CurrentState == WorkerEggState.HarvestingPantry ||
+            CurrentState == WorkerEggState.HarvestingEgg ||
+            CurrentState == WorkerEggState.RetrievingPantry ||
+            CurrentState == WorkerEggState.RetrievingEgg;
+    }
+
     void WalkTowardTarget()
     {
         if (selectingForHarvest)
             return;
 
         // If the worker is being assigned to a workstation or collecting a resource from the pantry, have it walk
-        if (CurrentState == WorkerEggState.Assigning ||
-            CurrentState == WorkerEggState.HarvestingPantry ||
-            CurrentState == WorkerEggState.HarvestingEgg ||
-            CurrentState == WorkerEggState.RetrievingPantry ||
-            CurrentState == WorkerEggState.RetrievingEgg)
+        if (IsWalking())
         {
             // Follow a victim if we're harvesting another egg
             if (Victim != null)
@@ -103,6 +118,7 @@ public class WorkerEgg : IInteractableObject {
             var frameMovement = Vector3.Normalize(leftToMove) * SpeedMultiplier * GameEngine.Current.EggSpeed * Time.deltaTime;
             var actualMovement = (frameMovement.magnitude < leftToMove.magnitude) ? frameMovement : leftToMove;
             transform.Translate(actualMovement);
+            UpdateUI();
         }
     }
     #endregion
@@ -196,15 +212,15 @@ public class WorkerEgg : IInteractableObject {
 
     public void BeginEggHarvest(WorkerEgg egg)
     {
+        WalkTarget = egg.transform.position;
         ChangeState(WorkerEggState.HarvestingEgg);
         Victim = egg;
-        WalkTarget = egg.transform.position;
     }
 
     public void EndEggHarvest()
     {
-        ChangeState(WorkerEggState.RetrievingEgg);
         WalkTarget = Destination.GetWalkPoint();
+        ChangeState(WorkerEggState.RetrievingEgg);
         Victim = null;
     }
 
@@ -331,6 +347,7 @@ public class WorkerEgg : IInteractableObject {
 
     void SpawnResourceParticle(GameEngine.ResourceType resource, int quantity)
     {
+        Debug.Log(string.Format("Spawning particle for {0} with quantity {1}", resource.ToString(), quantity));
         ObjectPooler.Current.Spawn<ResourceGainParticle>("ResourceGainParticle", x => {
             x.Source = this.transform.position;
             x.Destination = GameEngine.Current.ResourceDisplays[(int)resource].GetWorldPosition();
@@ -339,6 +356,111 @@ public class WorkerEgg : IInteractableObject {
             x.Quantity = quantity;
             x.SetSprite();
         });
+    }
+
+    float GetAnimationX(Vector3 movement)
+    {
+        return Mathf.Abs(movement.x) >= Mathf.Abs(movement.y) ? Mathf.Sign(movement.x) : 0;
+    }
+
+    float GetAnimationY(Vector3 movement)
+    {
+        return Mathf.Abs(movement.y) > Mathf.Abs(movement.x) ? Mathf.Sign(movement.y) : 0;
+    }
+
+    bool IsFlippedX(Vector3 movement)
+    {
+        return Mathf.Abs(movement.x) >= Mathf.Abs(movement.y) && movement.x > 0;
+    }
+
+    bool IsFacingForward(Vector3 movement)
+    {
+        return Mathf.Abs(movement.y) > Mathf.Abs(movement.x) && movement.y < 0;
+    }
+
+    bool IsFacingBackward(Vector3 movement)
+    {
+        return Mathf.Abs(movement.y) > Mathf.Abs(movement.x) && movement.y < 0;
+    }
+
+    const string ANIM_IS_WAITING = "IsWaiting";
+    const string ANIM_IS_WORKING = "IsWorking";
+    const string ANIM_IS_CARRYING = "IsCarrying";
+    const string ANIM_X_DIRECTION = "XDirection";
+    const string ANIM_Y_DIRECTION = "YDirection";
+
+    void UpdateUI()
+    {
+        var movement = IsWalking() ?(WalkTarget - this.transform.position) : Vector3.zero;
+
+        // Set carry object
+        if (CurrentState == WorkerEggState.RetrievingEgg)
+        {
+            CarryImage.enabled = true;
+            CarryImage.sprite = DeadEggSprite;
+        }
+        else if (CurrentState == WorkerEggState.RetrievingPantry)
+        {
+            CarryImage.enabled = true;
+            CarryImage.sprite = GameEngine.Current.IngredientIcons[(int)Source.Resource];
+        }
+        else
+        {
+            CarryImage.enabled = false;
+        }
+
+        // Set eyes
+        if (CurrentState == WorkerEggState.ProcessingEgg || CurrentState == WorkerEggState.ProcessingPantry)
+        {
+            EyesImage.enabled = false;
+        }
+        else if (CurrentState == WorkerEggState.Waiting || CurrentState == WorkerEggState.Unassigned)
+        {
+            EyesImage.enabled = true;
+            EyesImage.sprite = EyesForwardSprite;
+        }
+        else
+        {
+            if (IsFacingForward(movement))
+            {
+                EyesImage.enabled = true;
+                EyesImage.sprite = EyesForwardSprite;
+                EyesImage.flipX = false;
+            }
+            else if (IsFacingBackward(movement))
+            {
+                EyesImage.enabled = false;
+            }
+            else
+            {
+                EyesImage.enabled = true;
+                EyesImage.sprite = EyesSideSprite;
+                EyesImage.flipX = IsFlippedX(movement);
+            }
+        }
+
+        // Set feet
+        FeetAnimator.SetBool(ANIM_IS_WAITING, 
+            CurrentState == WorkerEggState.Waiting || CurrentState == WorkerEggState.Unassigned);
+
+        FeetAnimator.SetBool(ANIM_IS_WORKING, 
+            CurrentState == WorkerEggState.ProcessingEgg || CurrentState == WorkerEggState.ProcessingPantry);
+
+        FeetAnimator.SetFloat(ANIM_X_DIRECTION, GetAnimationX(movement));
+        FeetAnimator.SetFloat(ANIM_Y_DIRECTION, GetAnimationY(movement));
+
+        // Set arms
+        ArmAnimator.SetBool(ANIM_IS_WAITING, 
+            CurrentState == WorkerEggState.Waiting || CurrentState == WorkerEggState.Unassigned);
+
+        ArmAnimator.SetBool(ANIM_IS_WORKING, 
+            CurrentState == WorkerEggState.ProcessingEgg || CurrentState == WorkerEggState.ProcessingPantry);
+
+        ArmAnimator.SetBool(ANIM_IS_CARRYING, 
+            CurrentState == WorkerEggState.RetrievingEgg || CurrentState == WorkerEggState.RetrievingPantry);
+
+        ArmAnimator.SetFloat(ANIM_X_DIRECTION, GetAnimationX(movement));
+        ArmAnimator.SetFloat(ANIM_Y_DIRECTION, GetAnimationY(movement));
     }
     #endregion
 }

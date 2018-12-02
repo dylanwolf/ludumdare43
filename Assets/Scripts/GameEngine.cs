@@ -8,7 +8,7 @@ public class GameEngine : MonoBehaviour {
     public float LongtouchTime = 0.5f;
     public float EggSpeed = 5.0f;
     public float EggProcessingTime = 5.0f;
-    public int ProcessedEggQuantity = 12;
+    public int ProcessedEggQuantity = 4;
     public Sprite[] IngredientIcons;
     public Sprite[] WorkerCarrySprites;
     public float[] TimeBetweenDifficultyIncreases;
@@ -219,7 +219,7 @@ public class GameEngine : MonoBehaviour {
         Cheese = 6
     }
 
-    Dictionary<ResourceType, int> ResourceQuantity;
+    public Dictionary<ResourceType, int> ResourceQuantity;
 
 
     void InitResources()
@@ -323,22 +323,21 @@ public class GameEngine : MonoBehaviour {
         RefreshAddButtonStates();
     }
 
-    public bool AddResourceToSelectedGriddle(ResourceType resource, int amount)
+    void SpawnScoreParticle(Griddle griddle, OrderDisplay target, int points)
     {
-        if (SelectedGriddle != null && IsPlaying())
-        {
-            SelectedGriddle.AddResource(resource, amount);
-            return true;
-        }
-
-        return false;
+        ObjectPooler.Current.Spawn<ScoreGainParticle>("ScoreGainParticle", x => {
+            x.Source = griddle.GetWorldPosition();
+            x.Destination = target.GetWorldPosition();
+            x.PercentTraveled = 0;
+            x.Points = points;
+        });
     }
 
     public void ServeOmelette(OrderDisplay order)
     {
         if (SelectedGriddle != null && IsPlaying() && SelectedGriddle.HasIngredients && !SelectedGriddle.IsCooking())
         {
-            AddScore(order.ServeOmelette(SelectedGriddle.Ingredients));
+            SpawnScoreParticle(SelectedGriddle, order, order.ServeOmelette(SelectedGriddle.Ingredients));
             SelectedGriddle.ClearGriddle();            
         }
     }

@@ -10,7 +10,16 @@ public class OrderDisplay : IPoolable {
 	public Transform IngredientDisplayContainer;
 	public OrderData CurrentOrder;
 	public Image TimerIcon;
+	public Button AddButton;
 	float timer;
+
+	public Vector3 GetWorldPosition()
+	{
+		if (AddButton == null)
+			AddButton = GetComponentInChildren<Button>();
+
+		return AddButton.transform.position;
+	}
 
 	public void Populate(OrderData order)
 	{

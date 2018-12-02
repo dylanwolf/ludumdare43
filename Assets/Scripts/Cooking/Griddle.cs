@@ -10,6 +10,8 @@ public class Griddle : MonoBehaviour {
 	public bool HasIngredients;
 	public Image CookGauge;
 
+	public Image[] IngredientImages;
+
 	public float CookTime = 1.0f;
 	float timer = 0;
 
@@ -64,7 +66,8 @@ public class Griddle : MonoBehaviour {
 
 	void UpdateGriddleUI()
 	{
-		// TODO: Add animations
+		for (int i = 0; i < IngredientImages.Length; i++)
+			IngredientImages[i].enabled = Ingredients.ContainsKey((GameEngine.ResourceType)i) && Ingredients[(GameEngine.ResourceType)i] > 0;
 	}
 
 	void StartCooking()
@@ -91,5 +94,10 @@ public class Griddle : MonoBehaviour {
 			StartCooking();
 
 		UpdateGriddleUI();
+	}
+
+	public Vector3 GetWorldPosition()
+	{
+		return Selecter.transform.position;
 	}
 }
