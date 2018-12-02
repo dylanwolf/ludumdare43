@@ -4,7 +4,7 @@ using UnityEngine;
 
 public abstract class IInteractableObject : IPoolable {
 
-	public abstract void Touched();
+	public abstract bool Touched();
 	public virtual void TouchEnded() {}
 	public abstract void WorkerInteraction(WorkerEgg worker);
 }

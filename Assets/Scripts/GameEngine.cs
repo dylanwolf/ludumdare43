@@ -107,10 +107,10 @@ public class GameEngine : MonoBehaviour {
     #endregion
 
     #region Selections
-    public void SelectWorker(WorkerEgg egg)
+    public bool SelectWorker(WorkerEgg egg)
     {
         if (egg == SelectedWorker)
-            return;
+            return false;
 
         if (SelectedWorker != null)
             SelectedWorker.DeselectWorker();
@@ -118,6 +118,7 @@ public class GameEngine : MonoBehaviour {
         Debug.Log(string.Format("Selecting worker {0}", egg.gameObject.name));
         SelectedWorker = egg;
         egg.SelectWorker();
+        return true;
     }
 
     public void DeselectWorker()
@@ -235,7 +236,7 @@ public class GameEngine : MonoBehaviour {
     {
         foreach (ResourceType rt in System.Enum.GetValues(typeof(ResourceType)))
         {
-            ResourceQuantity[rt] = 100;
+            ResourceQuantity[rt] = 0;
             ResourceDisplays[(int)rt].UpdateValue(ResourceQuantity[rt]);
         }
     }
@@ -281,16 +282,18 @@ public class GameEngine : MonoBehaviour {
             SelectedWorker.CanAssignToResource());
     }
 
-    public void SendSelectedWorkerTo(Workstation workstation)
+    public bool SendSelectedWorkerTo(Workstation workstation)
     {
         if (SelectedWorker != null)
-            SelectedWorker.AssignWorker(workstation);
+            return SelectedWorker.AssignWorker(workstation);
+        return false;
     }
 
-    public void SendSelectedWorkerTo(MaterialSource mat)
+    public bool SendSelectedWorkerTo(MaterialSource mat)
     {
         if (SelectedWorker != null)
-            SelectedWorker.AssignResource(mat);
+            return SelectedWorker.AssignResource(mat);
+        return false;
     }
 
     public void SelectGriddle(Griddle griddle)

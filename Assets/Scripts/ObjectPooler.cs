@@ -83,10 +83,6 @@ public class ObjectPooler : MonoBehaviour {
 	void Awake()
 	{
 		Current = this;
-	}
-
-	void Start()
-	{
 		InitPools();
 	}
 
