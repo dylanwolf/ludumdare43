@@ -13,7 +13,8 @@ public class WorkerInteractionPoint : MonoBehaviour {
 		egg = GetComponentInParent<WorkerEgg>();
 	}
 
-	public void OnTriggerEnter2D(Collider2D collider)
+	//public void OnTriggerEnter2D(Collider2D collider)
+	public void OnTriggerStay2D(Collider2D collider)
 	{
 		Debug.Log(string.Format("Sending message to {0}", collider.transform.parent.name));
 		collider.transform.parent.SendMessage("WorkerInteraction", egg, SendMessageOptions.DontRequireReceiver);

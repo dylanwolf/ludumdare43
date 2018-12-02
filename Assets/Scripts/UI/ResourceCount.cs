@@ -10,7 +10,7 @@ public class ResourceCount : MonoBehaviour {
 	public Image Icon;
 	public GameObject AddButton;
 	RectTransform _r;
-	int lastValue = 0;
+	public int lastValue = 0;
 
 	void Start()
 	{
@@ -32,11 +32,15 @@ public class ResourceCount : MonoBehaviour {
 		}
 	}
 
+
 	public void AddToGriddle()
 	{
-		if (lastValue > 0 && GameEngine.Current.AddResourceToSelectedGriddle(Resource, 1))
+		if (GameEngine.Current.SelectedGriddle != null &&
+			GameEngine.Current.IsPlaying() &&
+			GameEngine.Current.CanSpendResource(Resource, 1))
 		{
-			UpdateValue(lastValue - 1);
+			SpawnResourceParticle();
+			GameEngine.Current.UpdateResource(Resource, -1);
 			RefreshAddButtonState();
 		}
 	}
@@ -47,4 +51,17 @@ public class ResourceCount : MonoBehaviour {
 		if (state != AddButton.activeSelf)
 			AddButton.SetActive(state);
 	}
+
+    void SpawnResourceParticle()
+    {
+        ObjectPooler.Current.Spawn<ResourceSpendParticle>("ResourceSpendParticle", x => {
+            x.Source = this.transform.position;
+            x.Destination = GameEngine.Current.SelectedGriddle.GetWorldPosition();
+			x.DestinationGriddle = GameEngine.Current.SelectedGriddle;
+            x.Resource = Resource;
+            x.PercentTraveled = 0;
+            x.Quantity = 1;
+            x.SetSprite();
+        });
+    }
 }

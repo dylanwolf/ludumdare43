@@ -47,6 +47,7 @@ public class ResourceGainParticle : IPoolable {
 			{
 				PercentTraveled = -100;
 				GameEngine.Current.UpdateResource(Resource, Quantity);
+				Quantity = 0;
 				this.Despawn();
 			}
 		}
