@@ -91,7 +91,10 @@ public class Griddle : MonoBehaviour {
 
 		Ingredients[resource] += amount;
 		if (amount > 0)
+		{
+			SoundBoard.Current.PlayIngredientAdded();
 			StartCooking();
+		}
 
 		UpdateGriddleUI();
 	}
