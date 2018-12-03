@@ -160,6 +160,7 @@ public class WorkerEgg : IInteractableObject {
     {
         if (worker == Victim)
         {
+            SoundBoard.Current.PlayEggDie();
             Victim.Killed();
             EndEggHarvest();
         }
@@ -307,6 +308,8 @@ public class WorkerEgg : IInteractableObject {
 
     IEnumerator DoProcessing()
     {
+        SoundBoard.Current.PlayEggProcess();
+
         // Have the worker process the food they received from the pantry
         float timer = 0;
         if (CurrentState == WorkerEggState.RetrievingPantry)

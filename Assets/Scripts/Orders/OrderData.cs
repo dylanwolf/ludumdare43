@@ -75,6 +75,11 @@ public class OrderData {
 		return score;
 	}
 
+	public int PotentialScore()
+	{
+		return Difficulty * 2;
+	}
+
 	public Dictionary<GameEngine.ResourceType, int> Ingredients = new Dictionary<GameEngine.ResourceType, int>();
 	public float Timer;
 	public int Difficulty;

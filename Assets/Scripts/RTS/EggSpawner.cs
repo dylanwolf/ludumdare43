@@ -36,6 +36,7 @@ public class EggSpawner : MonoBehaviour {
 		if (Timer < 0)
 		{
 			Timer = (SpawnTime + Timer);
+			SoundBoard.Current.PlayEggSpawn();
 			LastSpawned = ObjectPooler.Current.Spawn<WorkerEgg>("WorkerEgg", x => {
 				x.transform.position = transform.position;
 				x.UpdateUI();

@@ -57,6 +57,7 @@ public class GameEngine : MonoBehaviour {
         if (OrderQueue.Count == MaximumOrders)
             return;
 
+        SoundBoard.Current.PlayOmeletteNewOrder();
         OrderQueue.Add(ObjectPooler.Current.Spawn<OrderDisplay>("OrderDisplay", x => {
             x.transform.SetParent(OrderDisplayContainer);
             x.transform.SetAsFirstSibling();
@@ -337,7 +338,13 @@ public class GameEngine : MonoBehaviour {
     {
         if (SelectedGriddle != null && IsPlaying() && SelectedGriddle.HasIngredients && !SelectedGriddle.IsCooking())
         {
-            SpawnScoreParticle(SelectedGriddle, order, order.ServeOmelette(SelectedGriddle.Ingredients));
+            var score = order.ServeOmelette(SelectedGriddle.Ingredients);
+            if (score < order.CurrentOrder.PotentialScore())
+                SoundBoard.Current.PlayOmeletteFailure();
+            else
+                SoundBoard.Current.PlayOmeletteSuccess();
+                
+            SpawnScoreParticle(SelectedGriddle, order, score);
             SelectedGriddle.ClearGriddle();            
         }
     }
