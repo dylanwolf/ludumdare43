@@ -18,7 +18,7 @@ public class MaterialSource : IInteractableObject {
     public override void WorkerInteraction(WorkerEgg worker)
     {
         // If touched by the worker harvesting from it, complete the harvest action
-        if (worker.Source == this)
+        if (worker.Source == this && worker.CurrentState == WorkerEgg.WorkerEggState.HarvestingPantry)
 			worker.HarvestingComplete();
     }
 
